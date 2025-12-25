@@ -1,0 +1,13 @@
+{
+  "name": "bahir-dar-university-scheduling-system",
+  "version": "1.0.0",
+  "description": "Menu-driven C console application for Classroom and Laboratory Scheduling System",
+  "private": true,
+  "scripts": {
+    "build": "make",
+    "start": "./scheduling_system",
+    "clean": "make clean",
+    "rebuild": "make clean && make",
+    "test": "echo \"Run the program with: npm start\" && exit 0"
+  }
+}
