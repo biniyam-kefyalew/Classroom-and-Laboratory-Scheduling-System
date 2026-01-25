@@ -1,49 +1,16 @@
+#include "scheduling_system.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 #include <ctype.h>
+#define ROOMS_FILE "/var/www/data/rooms.dat"
+#define SCHEDULES_FILE "/var/www/data/schedules.dat"
 
-#define MAX_ROOMS 100
-#define MAX_SCHEDULES 500
-#define MAX_NAME_LENGTH 100
-#define MAX_DEPT_LENGTH 50
-#define ROOMS_FILE "rooms.dat"
-#define SCHEDULES_FILE "schedules.dat"
-
-typedef enum {
-    CLASSROOM,
-    LAB
-} RoomType;
-
-typedef enum {
-    MAJOR,
-    MINOR
-} ProgramType;
-
-typedef struct {
-    int id;
-    char name[MAX_NAME_LENGTH];
-    RoomType type;
-    int is_active;
-} Room;
-
-typedef struct {
-    int id;
-    char course_name[MAX_NAME_LENGTH];
-    char department[MAX_DEPT_LENGTH];
-    int student_year;
-    ProgramType program_type;
-    RoomType required_room_type;
-    int start_time;
-    int end_time;
-    int assigned_room_id;
-    int is_active;
-    int priority;
-} Schedule;
-
+/* ---------- GLOBAL DATA ---------- */
 Room rooms[MAX_ROOMS];
 Schedule schedules[MAX_SCHEDULES];
+
 int room_count = 0;
 int schedule_count = 0;
 int next_room_id = 1;
@@ -564,86 +531,86 @@ int check_conflict(Schedule *s1, int room_id, Schedule *existing_schedules, int 
     return 0;
 }
 
-void generate_final_schedule() {
-    clear_screen();
-    printf("\n╔════════════════════════════════════════════════════════════╗\n");
-    printf("║              GENERATING FINAL SCHEDULE...                  ║\n");
-    printf("╚════════════════════════════════════════════════════════════╝\n\n");
+// void generate_final_schedule() {
+//     clear_screen();
+//     printf("\n╔════════════════════════════════════════════════════════════╗\n");
+//     printf("║              GENERATING FINAL SCHEDULE...                  ║\n");
+//     printf("╚════════════════════════════════════════════════════════════╝\n\n");
 
-    Schedule *sorted_schedules = malloc(schedule_count * sizeof(Schedule));
-    if (!sorted_schedules) {
-        printf("Memory allocation failed.\n");
-        pause_screen();
-        return;
-    }
+//     Schedule *sorted_schedules = malloc(schedule_count * sizeof(Schedule));
+//     if (!sorted_schedules) {
+//         printf("Memory allocation failed.\n");
+//         pause_screen();
+//         return;
+//     }
 
-    int active_count = 0;
+//     int active_count = 0;
 
-    // 1️⃣ Copy active schedules (FIFO preserved)
-    for (int i = 0; i < schedule_count; i++) {
-        if (schedules[i].is_active) {
-            sorted_schedules[active_count++] = schedules[i];
-        }
-    }
+//     // 1️⃣ Copy active schedules (FIFO preserved)
+//     for (int i = 0; i < schedule_count; i++) {
+//         if (schedules[i].is_active) {
+//             sorted_schedules[active_count++] = schedules[i];
+//         }
+//     }
 
-    // 2️⃣ Sort by priority only
-    qsort(sorted_schedules, active_count, sizeof(Schedule), compare_schedules);
+//     // 2️⃣ Sort by priority only
+//     qsort(sorted_schedules, active_count, sizeof(Schedule), compare_schedules);
 
-    int assigned = 0;
-    int failed = 0;
+//     int assigned = 0;
+//     int failed = 0;
 
-    // 3️⃣ Assign rooms
-    for (int i = 0; i < active_count; i++) {
-        int room_assigned = 0;
+//     // 3️⃣ Assign rooms
+//     for (int i = 0; i < active_count; i++) {
+//         int room_assigned = 0;
 
-        for (int j = 0; j < room_count; j++) {
-            if (!rooms[j].is_active)
-                continue;
+//         for (int j = 0; j < room_count; j++) {
+//             if (!rooms[j].is_active)
+//                 continue;
 
-            if (rooms[j].type != sorted_schedules[i].required_room_type)
-                continue;
+//             if (rooms[j].type != sorted_schedules[i].required_room_type)
+//                 continue;
 
-            // Check conflict at SAME TIME, different room
-            if (!check_conflict(&sorted_schedules[i],
-                                rooms[j].id,
-                                schedules,
-                                schedule_count)) {
+//             // Check conflict at SAME TIME, different room
+//             if (!check_conflict(&sorted_schedules[i],
+//                                 rooms[j].id,
+//                                 schedules,
+//                                 schedule_count)) {
 
-                // Commit assignment
-                for (int k = 0; k < schedule_count; k++) {
-                    if (schedules[k].id == sorted_schedules[i].id) {
-                        schedules[k].assigned_room_id = rooms[j].id;
-                        break;
-                    }
-                }
+//                 // Commit assignment
+//                 for (int k = 0; k < schedule_count; k++) {
+//                     if (schedules[k].id == sorted_schedules[i].id) {
+//                         schedules[k].assigned_room_id = rooms[j].id;
+//                         break;
+//                     }
+//                 }
 
-                assigned++;
-                room_assigned = 1;
-                break; // FIFO room assignment
-            }
-        }
+//                 assigned++;
+//                 room_assigned = 1;
+//                 break; // FIFO room assignment
+//             }
+//         }
 
-        if (!room_assigned) {
-            failed++;
-            printf("⚠ Could not assign room for: %s (ID: %d, %d-%d)\n",
-                   sorted_schedules[i].course_name,
-                   sorted_schedules[i].id,
-                   sorted_schedules[i].start_time,
-                   sorted_schedules[i].end_time);
-        }
-    }
+//         if (!room_assigned) {
+//             failed++;
+//             printf("⚠ Could not assign room for: %s (ID: %d, %d-%d)\n",
+//                    sorted_schedules[i].course_name,
+//                    sorted_schedules[i].id,
+//                    sorted_schedules[i].start_time,
+//                    sorted_schedules[i].end_time);
+//         }
+//     }
 
-    free(sorted_schedules);
-    save_schedules();
+//     free(sorted_schedules);
+//     save_schedules();
 
-    printf("\n─────────────────────────────────────────\n");
-    printf("✓ Schedule generation complete!\n");
-    printf("  Successfully assigned: %d\n", assigned);
-    printf("  Failed to assign: %d\n", failed);
-    printf("─────────────────────────────────────────\n");
+//     printf("\n─────────────────────────────────────────\n");
+//     printf("✓ Schedule generation complete!\n");
+//     printf("  Successfully assigned: %d\n", assigned);
+//     printf("  Failed to assign: %d\n", failed);
+//     printf("─────────────────────────────────────────\n");
 
-    pause_screen();
-}
+//     pause_screen();
+// }
 
 void view_schedule_by_room() {
     clear_screen();
@@ -894,7 +861,7 @@ void schedule_management_menu() {
                 delete_schedule();
                 break;
             case 5:
-                generate_final_schedule();
+                // generate_final_schedule();
                 break;
             case 6:
                 display_final_schedule();
@@ -914,41 +881,41 @@ void schedule_management_menu() {
     } while (choice != 0);
 }
 
-int main() {
-    load_rooms();
-    load_schedules();
+// int main() {
+//     load_rooms();
+//     load_schedules();
 
-    int choice;
+//     int choice;
 
-    do {
-        clear_screen();
-        printf("\n╔════════════════════════════════════════════════════════════╗\n");
-        printf("║     CLASSROOM AND LABORATORY SCHEDULING SYSTEM             ║\n");
-        printf("║            BAHIR DAR UNIVERSITY                            ║\n");
-        printf("╚════════════════════════════════════════════════════════════╝\n\n");
-        printf("  1. Room Management\n");
-        printf("  2. Schedule Management\n");
-        printf("  0. Exit\n");
-        printf("\n─────────────────────────────────────────────────────────────\n");
-        printf("Enter your choice: ");
-        scanf("%d", &choice);
+//     do {
+//         clear_screen();
+//         printf("\n╔════════════════════════════════════════════════════════════╗\n");
+//         printf("║     CLASSROOM AND LABORATORY SCHEDULING SYSTEM             ║\n");
+//         printf("║            BAHIR DAR UNIVERSITY                            ║\n");
+//         printf("╚════════════════════════════════════════════════════════════╝\n\n");
+//         printf("  1. Room Management\n");
+//         printf("  2. Schedule Management\n");
+//         printf("  0. Exit\n");
+//         printf("\n─────────────────────────────────────────────────────────────\n");
+//         printf("Enter your choice: ");
+//         scanf("%d", &choice);
 
-        switch (choice) {
-            case 1:
-                room_management_menu();
-                break;
-            case 2:
-                schedule_management_menu();
-                break;
-            case 0:
-                printf("\n✓ Thank you for using the scheduling system!\n");
-                printf("  Goodbye!\n\n");
-                break;
-            default:
-                printf("\n✗ Invalid choice! Please try again.\n");
-                pause_screen();
-        }
-    } while (choice != 0);
+//         switch (choice) {
+//             case 1:
+//                 room_management_menu();
+//                 break;
+//             case 2:
+//                 schedule_management_menu();
+//                 break;
+//             case 0:
+//                 printf("\n✓ Thank you for using the scheduling system!\n");
+//                 printf("  Goodbye!\n\n");
+//                 break;
+//             default:
+//                 printf("\n✗ Invalid choice! Please try again.\n");
+//                 pause_screen();
+//         }
+//     } while (choice != 0);
 
-    return 0;
-}
+//     return 0;
+// }
