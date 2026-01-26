@@ -36,10 +36,10 @@ A C-based CGI Web Application that automates room scheduling with intelligent co
    - Form processing
 
 3. Data Model
-   ```
+   \`\`\`
    Rooms: ID, Name, Type (Classroom/Lab), Status
    Schedules: Course, Department, Year, Time, Priority, Assigned Room
-   ```
+   \`\`\`
 
 ### Technology Stack
 
@@ -72,7 +72,7 @@ A C-based CGI Web Application that automates room scheduling with intelligent co
 
 ### C. Intelligent Scheduling Algorithm
 
-```c
+\`\`\`c
 Priority Formula:
 Priority = (Year × 10) + (Major:5/Minor:0) + (Lab:3/Classroom:0)
 
@@ -82,7 +82,7 @@ Assignment Logic:
 3. Check for time conflicts
 4. Assign if no conflict
 5. Continue for all schedules
-```
+\`\`\`
 
 ### D. Advanced Viewing Options
 
@@ -104,7 +104,7 @@ Assignment Logic:
 
 ### Data Persistence
 
-```c
+\`\`\`c
 // Binary file storage
 File Structure:
 - Header: [count, next_id]
@@ -118,11 +118,11 @@ Benefits:
 - Fast read/write operations
 - Compact storage
 - Type safety
-```
+\`\`\`
 
 ### CGI Implementation
 
-```c
+\`\`\`c
 // Key Functions:
 1. Parse GET/POST requests
 2. URL decode form data
@@ -133,17 +133,17 @@ Environment Variables Used:
 - QUERY_STRING
 - REQUEST_METHOD
 - CONTENT_LENGTH
-```
+\`\`\`
 
 ### Conflict Resolution Algorithm
 
-```
+\`\`\`
 For each schedule (sorted by priority):
    For each suitable room:
       Check time overlap with existing assignments
       If no conflict → Assign room
       Else → Try next room
-```
+\`\`\`
 
 ---
 
@@ -153,28 +153,28 @@ For each schedule (sorted by priority):
 
 - Problem: Missing POSIX functions (`strdup`, `strcasecmp`)
 - Solution: Implemented custom versions
-  ```c
+  \`\`\`c
   char my_strdup(const char s);
   int my_strcasecmp(const char s1, const char s2);
-  ```
+  \`\`\`
 
 ### Challenge 2: Data Persistence
 
 - Problem: `/tmp` directory clears on reboot
 - Solution: Created persistent `./data` directory
-  ```c
+  \`\`\`c
   void ensure_data_directory() {
       mkdir("./data", 0755);
   }
-  ```
+  \`\`\`
 
 ### Challenge 3: Web Form Handling
 
 - Problem: Parsing URL-encoded form data
 - Solution: Implemented URL decoder
-  ```c
+  \`\`\`c
   void url_decode(char str);
-  ```
+  \`\`\`
 
 ### Challenge 4: Memory Management
 
@@ -190,7 +190,7 @@ For each schedule (sorted by priority):
 
 ### Setup Steps:
 
-```bash
+\`\`\`bash
 # 1. Install dependencies
 sudo dnf install httpd gcc make
 
@@ -210,13 +210,13 @@ sudo chmod +x /var/www/cgi-bin/web_interface
 # 5. Create data directory
 sudo mkdir -p /var/www/cgi-bin/data
 sudo chmod 777 /var/www/cgi-bin/data
-```
+\`\`\`
 
 ### Access URL:
 
-```
+\`\`\`
 http://your-server-ip/cgi-bin/web_interface
-```
+\`\`\`
 
 ---
 
