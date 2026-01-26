@@ -40,7 +40,7 @@
   - Student year (1-5)
   - Program type (Major/Minor)
   - Required room type
-  - **Weekly hours** (e.g., 3 hours/week, 5 hours/week)
+  - **Weekly hours** (e.g., 3 hours/week, 6 hours/week)
 - Automatic priority calculation
 - Input validation
 - Unique ID assignment
@@ -53,8 +53,9 @@
   - All schedules (unfiltered)
   - Weekly timetable (Monday-Friday)
   - Final schedule (grouped by room)
-  - By specific room
-  - By department
+  - **By Year & Department** (weekly view)
+  - **By specific Room** (with selection dropdown)
+  - All Rooms overview
 
 #### 2.3 Update Schedules
 - Edit course details
@@ -70,7 +71,7 @@
 - Preserves data integrity
 - Immediate effect
 
-### 3. Intelligent Scheduling Algorithm
+### 3. Intelligent Distributed Scheduling Algorithm
 
 #### 3.1 Priority Calculation
 ```
@@ -93,19 +94,40 @@ Components:
   - Classroom: +0 points
 ```
 
-#### 3.2 Two-Phase Room Assignment
+#### 3.2 **Distributed Class Scheduling (NEW)**
+
+The system now **distributes class hours evenly across 5 days** (Monday-Friday):
+
+```
+Example: 6-hour course distribution
+- Monday:    90 min (1.5 hrs)
+- Tuesday:   90 min (1.5 hrs)
+- Wednesday: 90 min (1.5 hrs)
+- Thursday:  90 min (1.5 hrs)
+- Friday:    (rest or additional if needed)
+Total: 6 hours distributed across the week
+
+Key Rules:
+- Minimum session duration: 90 minutes (1 hour 30 min)
+- Maximum sessions per day: Calculated to prevent bunching
+- System finds day with least assigned time first
+- Ensures even spread across Mon-Fri
+```
+
+#### 3.3 Two-Phase Room Assignment
 
 **Phase 1: Preferred Room Types**
 1. Lab courses are assigned ONLY to lab rooms
 2. Classroom courses are assigned ONLY to classrooms
 3. Higher priority courses get first choice
+4. Classes distributed evenly across 5 days
 
 **Phase 2: Lab Fallback for Classrooms**
 1. If classrooms are full, classroom courses can use available lab rooms
 2. Lab courses NEVER use classrooms (they need specialized equipment)
 3. This maximizes room utilization
 
-#### 3.3 Scheduling Rules
+#### 3.4 Scheduling Rules
 1. **Priority-Based Assignment**
    - Higher priority schedules assigned first
    - Ensures senior students get optimal slots
@@ -122,25 +144,27 @@ Components:
    - **Student Conflict**: Same department/year students cannot have overlapping classes
    - Validates availability before assignment
 
-4. **Automatic Weekly Distribution**
+4. **Even Distribution Across 5 Days**
    - System automatically distributes weekly hours across Monday-Friday
-   - Time slots: Morning (08:00-12:30) and Afternoon (14:00-17:30)
-   - 1-hour slot duration
-   - Reports unsuccessful assignments
+   - Prevents bunching all hours on one or two days
+   - Minimum session duration: 90 minutes
+   - Reports distribution per day (e.g., M:90 T:90 W:90 Th:90 F:0)
 
-#### 3.4 Algorithm Steps
+#### 3.5 Algorithm Steps
 1. Collect all active schedules
 2. Sort by priority (descending)
 3. **Phase 1**: For each schedule (highest priority first):
+   - Find day with minimum assigned time (for even distribution)
    - Find rooms matching required type ONLY
    - Check each room for time conflicts
    - Check for student conflicts (same dept/year)
-   - Assign to first conflict-free room
+   - Assign 90-min session to first conflict-free slot
+   - Repeat until weekly hours fulfilled or no slots available
 4. **Phase 2**: For classroom courses with unassigned hours:
    - Try to use available lab rooms as fallback
    - Lab courses are NOT included in this phase
 5. Save assignments
-6. Report statistics (assigned/failed)
+6. Report statistics (assigned/failed with minutes breakdown)
 
 ### 4. Weekly Schedule Generation
 
@@ -148,18 +172,28 @@ Components:
 - **Days**: Monday through Friday (5 days)
 - **Morning Session**: 08:00 - 12:30 (4.5 hours)
 - **Afternoon Session**: 14:00 - 17:30 (3.5 hours)
-- **Slot Duration**: 1 hour per slot
-- **Total Slots per Day**: 9 slots (5 morning + 4 afternoon)
+- **Slot Duration**: 90 minutes (1 hour 30 min) minimum
+- **Time Slots**:
+  - Morning: 08:00-09:30, 09:30-11:00, 11:00-12:30
+  - Afternoon: 14:00-15:30, 15:30-17:00, 17:00-17:30
 
-#### 4.2 Weekly Hours Distribution
+#### 4.2 Weekly Hours Distribution (NEW)
 ```
-Example: Course with 5 weekly hours
-- Monday: 08:00-09:00 (1 hr)
-- Tuesday: 08:00-09:00 (1 hr)
-- Wednesday: 08:00-09:00 (1 hr)
-- Thursday: 08:00-09:00 (1 hr)
-- Friday: 08:00-09:00 (1 hr)
-Total: 5 hours distributed across the week
+Example: Course with 6 weekly hours
+- Target per day: 72 minutes (6 hrs / 5 days)
+- Actual distribution with 90-min sessions:
+  - Monday:    90 min
+  - Tuesday:   90 min
+  - Wednesday: 90 min
+  - Thursday:  90 min
+  Total: 360 min = 6 hours evenly distributed
+
+Example: Course with 3 weekly hours
+- Target per day: 36 minutes
+- Actual distribution:
+  - Monday:    90 min
+  - Wednesday: 90 min
+  Total: 180 min = 3 hours across 2 days
 ```
 
 #### 4.3 Generated Slots
@@ -167,13 +201,48 @@ Each generated slot contains:
 - Schedule ID (reference to course)
 - Room ID (assigned room)
 - Day of week (Monday-Friday)
-- Start time
-- End time
+- Start time (in minutes from midnight)
+- End time (in minutes from midnight)
+- Duration tracking (for distribution calculation)
 - Active status
 
-### 5. Data Persistence
+### 5. Viewing Options
 
-#### 5.1 Binary File Storage
+#### 5.1 Weekly Timetable View
+- Organized by day (Monday-Friday)
+- Shows morning and afternoon sessions
+- Displays room assignments
+- Complete course information per slot
+
+#### 5.2 Final Schedule View
+- Grouped by room
+- Shows all assigned courses per room
+- Displays complete course information
+- Priority scores visible
+- Clean, organized format
+
+#### 5.3 **By Year & Department View (Enhanced)**
+- Filter by specific year AND department
+- Weekly view showing all 5 days
+- Shows time, duration, course, room for each slot
+- Useful for students to see their weekly schedule
+
+#### 5.4 **By Room View (NEW)**
+- **Dropdown selection** to choose specific room
+- Weekly schedule for selected room
+- Shows utilization summary (total hours used)
+- Day-by-day breakdown with duration
+- Links to detailed view from All Rooms page
+
+#### 5.5 **All Rooms Overview (Enhanced)**
+- **Utilization summary table** showing hours per day per room
+- Quick links to individual room schedules
+- Shows total weekly hours per room
+- Detailed schedule below summary
+
+### 6. Data Persistence
+
+#### 6.1 Binary File Storage
 - Efficient storage format
 - Fast read/write operations
 - Three data files:
@@ -181,99 +250,29 @@ Each generated slot contains:
   - `schedules.dat`: Schedule records
   - `generated_slots.dat`: Generated weekly timetable
 
-#### 5.2 Data Structure
-```c
-Files contain:
-1. Record count
-2. Next ID counter
-3. Array of structs
-```
-
-#### 5.3 Auto-save
+#### 6.2 Auto-save
 - Automatic save after every create/update/delete operation
 - No manual save required
 - Data persists between sessions
-- Crash-safe (last completed operation saved)
 
-### 6. User Interface
+### 7. Web Interface Features
 
-#### 6.1 Menu System
-- Hierarchical menu structure:
-  ```
-  Main Menu
-  |-- Room Management
-  |   |-- Display Rooms
-  |   |-- Add Room
-  |   |-- Edit Room
-  |   +-- Delete Room
-  +-- Schedule Management
-      |-- Display Schedules
-      |-- Add Schedule
-      |-- Edit Schedule
-      |-- Delete Schedule
-      |-- Generate Weekly Schedule
-      |-- View Weekly Timetable
-      |-- View Final Schedule
-      |-- View by Room
-      +-- View by Department
-  ```
+#### 7.1 Navigation Menu
+```
+Home | Rooms | Add Room | Schedules | Add Schedule | Generate | 
+Weekly Timetable | By Year/Dept | By Room | All Rooms | Final Schedule
+```
 
-#### 6.2 Display Features
-- Box-drawing characters for visual appeal
-- Formatted tables with aligned columns
-- Clear headers and separators
-- Status indicators (success, error, warning)
-- Consistent styling throughout
-- Day-by-day timetable view
+#### 7.2 Generate Schedule Page
+- Clear explanation of distribution algorithm
+- Shows example of how hours are spread
+- Displays time slot configuration
+- One-click schedule generation
 
-#### 6.3 Navigation
-- Number-based menu selection
-- Clear prompts
-- "Press Enter to continue" pause system
-- Back to previous menu option
-- Exit from any level
-
-#### 6.4 Input Handling
-- Buffer clearing to prevent input issues
-- Input validation
-- Error messages for invalid input
-- Default value options (keep current)
-- Confirmation prompts for destructive actions
-
-### 7. Viewing and Reporting
-
-#### 7.1 Weekly Timetable View
-- Organized by day (Monday-Friday)
-- Shows morning and afternoon sessions
-- Displays room assignments
-- Complete course information per slot
-
-#### 7.2 Final Schedule View
-- Grouped by room
-- Shows all assigned courses per room
-- Displays complete course information
-- Priority scores visible
-- Clean, organized format
-
-#### 7.3 Room-Based View
-- Filter by specific room ID
-- Shows all courses in selected room
-- Day-by-day breakdown
-- Useful for room utilization analysis
-
-#### 7.4 Department-Based View
-- Filter by department name
-- Case-insensitive search
-- Shows all department courses
-- Displays assignment status
-- Day-by-day breakdown
-- Useful for department coordinators
-
-#### 7.5 Complete Schedule List
-- Shows all active schedules
-- Displays weekly hours
-- Priority scores visible
-- Assignment status
+#### 7.3 View Options
+- **By Year/Dept**: Select year and department, see weekly schedule
+- **By Room**: Select room from dropdown, see weekly utilization
+- **All Rooms**: Overview with utilization stats and links
 
 ### 8. Conflict Management
 
@@ -287,7 +286,6 @@ No conflict when:
 - Different rooms
 - Different days
 - End time of schedule A <= Start time of schedule B
-- Start time of schedule A >= End time of schedule B
 ```
 
 #### 8.2 Student Conflict Detection
@@ -302,91 +300,37 @@ This prevents students from having two classes at the same time
 #### 8.3 Room Type Priority
 - Lab courses MUST use lab rooms (cannot use classrooms)
 - Classroom courses prefer classrooms but can use labs as fallback
-- System first assigns all courses to preferred room types
-- Then fills remaining classroom courses into available labs
 
-#### 8.4 Conflict Resolution
-- Priority-based: Higher priority gets first choice
-- Two-phase assignment ensures labs are reserved for lab courses
-- Alternative room selection for lower priority
-- Reports when no suitable room available
+### 9. System Design
 
-### 9. Data Validation
-
-#### 9.1 Input Validation
-- Non-empty course names
-- Valid year ranges (1-5)
-- Valid weekly hours (positive integer)
-- Valid menu selections
-- Buffer overflow prevention
-
-#### 9.2 Data Integrity
-- Referential integrity (room-schedule relationship)
-- Soft deletes preserve history
-- Cascading updates (room deletion cleans schedules)
-- Unique ID management
-
-### 10. Error Handling
-
-#### 10.1 User Errors
-- Invalid menu selections -> Error message, retry
-- Invalid input types -> Buffer clearing, retry
-- Invalid weekly hours -> Rejection with explanation
-- Non-existent IDs -> "Not found" message
-
-#### 10.2 System Errors
-- File I/O errors -> Error message
-- Capacity limits -> Clear warning
-- Memory allocation errors -> Graceful handling
-
-#### 10.3 User Feedback
-- Success messages
-- Error messages
-- Warning messages
-- Informational messages
-- Confirmation prompts
-
-### 11. System Design
-
-#### 11.1 Architecture
+#### 9.1 Architecture
 ```
-scheduling_system.c
-|-- Data Structures
-|   |-- Room struct
-|   |-- Schedule struct
-|   +-- GeneratedSlot struct
-|-- File I/O
-|   |-- Load functions
-|   +-- Save functions
-|-- UI Functions
-|   |-- Display functions
-|   |-- Add functions
-|   |-- Edit functions
-|   +-- Delete functions
-|-- Algorithm
-|   |-- Priority calculation
-|   |-- Room suitability check
-|   |-- Conflict detection (room + student)
-|   |-- Two-phase room assignment
-|   +-- Weekly distribution
-+-- Main Program
-    |-- Main menu
-    |-- Room management menu
-    +-- Schedule management menu
+Web Interface (web_interface.c)
+|-- Navigation and routing
+|-- Form handling
+|-- Schedule generation
+|-- Multiple view handlers
+|
+Console Application (scheduling_system.c)
+|-- Menu-driven interface
+|-- Same scheduling algorithm
+|-- Same view functions
+|
+Data Layer
+|-- rooms.dat
+|-- schedules.dat
++-- generated_slots.dat
 ```
 
-#### 11.2 Design Principles
-- Single Responsibility: Each function has one clear purpose
-- DRY: Reusable utility functions
-- Modularity: Clear separation of concerns
-- User-friendly: Clear prompts and feedback
-- Robust: Error handling and validation
-
-#### 11.3 Scalability
-- Configurable limits (MAX_ROOMS, MAX_SCHEDULES, MAX_GENERATED_SLOTS)
-- Efficient binary file format
-- O(n^2) worst-case for conflict detection (acceptable for typical use)
-- qsort for efficient priority sorting
+#### 9.2 Key Functions (Web Interface)
+```c
+web_count_minutes_on_day()     // Track time assigned per day
+web_calc_ideal_minutes_per_day() // Calculate target distribution
+web_calc_max_minutes_per_day() // Prevent over-assignment
+web_generate_schedule()        // Main scheduling with distribution
+handle_schedule_by_room_form() // Room selection and display
+handle_all_rooms_schedule()    // Overview with utilization
+```
 
 ## Technical Specifications
 
@@ -402,18 +346,25 @@ scheduling_system.c
 
 ### Performance
 - Instant room/schedule operations
-- Sub-second schedule generation (typical cases)
+- Sub-second schedule generation
 - Efficient binary file I/O
-- Memory-efficient struct design
 
 ### Limitations
 - Maximum 100 rooms
 - Maximum 500 schedules
 - Maximum 2000 generated time slots
+- Minimum session duration: 90 minutes
 - No concurrency support (single-user)
-- Terminal-based only (no GUI)
-- Web interface available via CGI
+
+## Summary of New Features
+
+1. **Distributed Scheduling**: Classes spread evenly across Mon-Fri
+2. **90-Minute Minimum Sessions**: Each class is at least 1.5 hours
+3. **By Room View**: Dropdown to select and view specific room schedule
+4. **Room Utilization Stats**: Hours per day per room in overview
+5. **Enhanced Generation Display**: Shows distribution per day (M:90 T:90 etc.)
+6. **Minutes Tracking**: Precise tracking in minutes for accurate distribution
 
 ## Conclusion
 
-The Bahir Dar University Scheduling System provides a comprehensive, intelligent solution for classroom and laboratory scheduling. With weekly hours-based scheduling, two-phase room assignment (lab priority with classroom fallback), student conflict prevention, and multiple viewing options, it serves as a robust system that can be adapted for various educational institutions.
+The Bahir Dar University Scheduling System provides comprehensive, intelligent scheduling with automatic distribution of class hours across the week. The system ensures no student has overlapping classes, respects room type requirements, and maximizes room utilization through the two-phase assignment algorithm.

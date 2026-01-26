@@ -11,6 +11,9 @@ make
 
 ```bash
 ./scheduling_system
+
+# Or for web interface:
+make open
 ```
 
 ## Step 3: Add Your First Room
@@ -41,112 +44,98 @@ Main Menu -> 2 (Schedule Management)
 -> Year: 3
 -> Program: 1 (Major)
 -> Room Type: 2 (Lab)
--> Weekly Hours: 3
+-> Weekly Hours: 6
 ```
 
-## Step 6: Add Another Schedule
-
-```
--> 2 (Add New Schedule)
--> Course: "Database Systems"
--> Department: "Computer Science"
--> Year: 4
--> Program: 1 (Major)
--> Room Type: 1 (Classroom)
--> Weekly Hours: 4
-```
-
-## Step 7: Generate Weekly Schedule
+## Step 6: Generate Distributed Schedule
 
 ```
 -> 5 (Generate Weekly Schedule)
 ```
 
-You'll see:
+You'll see the **distributed** output:
+
 ```
-=== PHASE 1: Assigning with preferred room types ===
+=== Schedule Generation - Distributed Across 5 Days ===
 
-Processing: Data Structures Lab         (Priority: 38, Need: 3 hrs, Lab)
-  [OK] Fully assigned: 3 hrs
+Distribution Rules:
+1. Classes are distributed evenly across Monday-Friday
+2. Minimum session duration: 1 hour 30 minutes (90 min)
+3. Example: 6 hrs/week = ~72 min/day across 5 days
 
-Processing: Database Systems            (Priority: 45, Need: 4 hrs, Classroom)
-  [OK] Fully assigned: 4 hrs
+Processing: Data Structures Lab (Priority: 38, Weekly: 6 hrs)
+  Distribution: M:90 T:90 W:90 Th:90 F:0
+  Status: Complete (6h0m)
 
 === FINAL SUMMARY ===
-
-[OK] Schedule generation complete!
-  Total hours assigned: 7
-  Hours failed to assign: 0
-  Generated slots: 7
+Total time assigned: 6 hours 0 minutes
+Session duration: 1 hour 30 minutes (90 min)
 ```
 
-## Step 8: View Results
+## Step 7: View Results
 
+### Option A: View by Year & Department
 ```
--> 6 (View Weekly Timetable)
+-> By Year/Dept
+-> Select Year: 3
+-> Select Department: Computer Science
+-> See weekly schedule for CS Year 3 students
 ```
 
-You'll see your courses distributed across Monday-Friday!
-
+### Option B: View by Room
 ```
-=== MONDAY ===
-  08:00-09:00   Data Structures Lab      Computer Lab 1       Computer Science  3
-  08:00-09:00   Database Systems         Lecture Hall A       Computer Science  4
+-> By Room
+-> Select: Computer Lab 1
+-> See weekly schedule and utilization for that room
+```
 
-=== TUESDAY ===
-  08:00-09:00   Data Structures Lab      Computer Lab 1       Computer Science  3
-  08:00-09:00   Database Systems         Lecture Hall A       Computer Science  4
-
-... (continues for the week)
+### Option C: View All Rooms Overview
+```
+-> All Rooms
+-> See utilization table: hours per day per room
 ```
 
 ## That's It!
 
-You now have a working weekly schedule with:
-- 2 rooms (1 lab, 1 classroom)
-- 2 courses assigned
-- 7 total hours distributed across the week
-- No room conflicts
-- No student conflicts (different years)
-- Priority-based allocation
+You now have a working schedule with:
+- Classes distributed evenly across Mon-Fri
+- 90-minute minimum sessions
+- Multiple viewing options
 
 ## Key Concepts
 
-### Weekly Hours (NEW!)
-Instead of specifying start/end times, you now specify **total hours per week**:
-- Example: "3" means 3 hours per week
-- System automatically distributes across Monday-Friday
-- Time slots: 08:00-12:30 (morning), 14:00-17:30 (afternoon)
+### Distributed Scheduling (NEW!)
+Classes are **automatically spread across 5 days**:
 
-### Two-Phase Room Assignment (NEW!)
-1. **Phase 1**: Lab courses -> Labs, Classroom courses -> Classrooms
-2. **Phase 2**: If classrooms full, classroom courses can use available labs
-3. Lab courses NEVER use classrooms (they need specialized equipment)
+```
+6-hour course:
+  Monday:    90 min
+  Tuesday:   90 min
+  Wednesday: 90 min
+  Thursday:  90 min
+  Total: 6 hours (NOT bunched on 1-2 days)
+```
 
-### Student Conflict Prevention (NEW!)
-- Same department AND same year cannot have overlapping classes
-- System automatically prevents scheduling conflicts for students
+### Minimum Session Duration
+- Each class session is **at least 90 minutes** (1.5 hours)
+- Ensures meaningful learning time per session
 
-## Next Steps
+### Viewing Options
 
-- Add more rooms and schedules
-- Try editing existing entries
-- View by room or department
-- Experiment with different weekly hours
-
-## Need More Help?
-
-- **Detailed Guide**: See USAGE_GUIDE.md
-- **Features**: See FEATURES.md
-- **Overview**: See PROJECT_OVERVIEW.md
+| View | Use Case |
+|------|----------|
+| By Year/Dept | Students checking their weekly schedule |
+| By Room | Room managers checking room utilization |
+| All Rooms | Overview of all room usage |
+| Final Schedule | Complete schedule grouped by room |
 
 ## Common Commands
 
 ```bash
 make          # Compile
-make run      # Compile and run
-make clean    # Remove compiled files and data
+make run      # Compile and run console
 make open     # Compile and run web interface
+make clean    # Remove compiled files and data
 npm run build # Alternative: compile
 npm start     # Alternative: run
 ```
@@ -154,10 +143,9 @@ npm start     # Alternative: run
 ## Tips
 
 1. **Add rooms first** before schedules
-2. **Mix of room types**: Add both classrooms and labs
-3. **Set realistic weekly hours**: 2-5 hours per course is typical
-4. **Generate after changes**: Always regenerate after adding/editing
-5. **Check views**: Use weekly timetable, room, and department filters
+2. **Set realistic weekly hours**: 2-6 hours per course
+3. **Generate after changes**: Always regenerate after adding/editing
+4. **Check distribution**: Look at M:XX T:XX W:XX output to verify spread
 
 ## Priority Quick Reference
 
@@ -169,19 +157,32 @@ npm start     # Alternative: run
 | 3    | Major   | Lab       | 38       |
 | 1    | Minor   | Classroom | 10       |
 
-**Higher numbers = Higher priority = Gets scheduled first**
+## Distribution Example
 
-## Room Assignment Rules
+```
+Course: Database Systems
+Weekly Hours: 6
+Session Duration: 90 min
 
-| Course Type | Phase 1 | Phase 2 (Fallback) |
-|-------------|---------|-------------------|
-| Lab Course  | Lab rooms only | NO fallback (must use lab) |
-| Classroom Course | Classrooms only | Can use available labs |
+Distribution across week:
++-------+-------+-------+-------+-------+
+|  Mon  |  Tue  |  Wed  |  Thu  |  Fri  |
++-------+-------+-------+-------+-------+
+| 90min | 90min | 90min | 90min |   -   |
++-------+-------+-------+-------+-------+
+Total: 360 min = 6 hours (evenly distributed)
+```
 
 ---
 
-**Ready to start? Just run:**
+**Ready to start?**
 
 ```bash
 make && ./scheduling_system
+```
+
+**Or for web interface:**
+
+```bash
+make open
 ```

@@ -2,14 +2,14 @@
 
 ## Project Overview
 
-A comprehensive, menu-driven C console application designed to manage classroom and laboratory scheduling for Bahir Dar University. The system implements intelligent priority-based scheduling with automatic weekly timetable generation, lab room priority, and conflict detection.
+A comprehensive, menu-driven C application designed to manage classroom and laboratory scheduling for Bahir Dar University. The system implements intelligent priority-based scheduling with **automatic distribution of class hours across 5 days**, lab room priority, and conflict detection.
 
 ## What's Included
 
 ### Core Application
 - **scheduling_system.h** - Header file with data structures and function declarations
-- **scheduling_system.c** - Complete C implementation (1100+ lines)
-- **web_interface.c** - CGI-based web interface
+- **scheduling_system.c** - Complete C implementation (1500+ lines)
+- **web_interface.c** - CGI-based web interface (1500+ lines)
 - **Makefile** - Build automation
 - **package.json** - NPM integration for easy building
 
@@ -31,6 +31,9 @@ make
 # Or using NPM
 npm run build
 npm start
+
+# Web Interface
+make open
 ```
 
 ### Basic Workflow
@@ -42,18 +45,19 @@ npm start
 2. **Add Schedules** (Schedule Management -> Add Schedule)
    - Enter course details
    - Specify room type requirements
-   - Set **weekly hours** (e.g., 3 hrs/week, 5 hrs/week)
+   - Set **weekly hours** (e.g., 3 hrs/week, 6 hrs/week)
 
-3. **Generate Weekly Schedule** (Schedule Management -> Generate Weekly Schedule)
+3. **Generate Schedule** (Generate -> Generate Distributed Schedule)
    - Automatic room assignment
-   - Priority-based allocation
+   - **Distributes hours evenly across Mon-Fri**
+   - Minimum 90-minute sessions
    - Two-phase assignment (lab priority, then classroom fallback)
-   - Distributes hours across Monday-Friday
 
 4. **View Results**
-   - Weekly Timetable (day-by-day view)
-   - Final Schedule (grouped by room)
-   - By Department or By Room filters
+   - **By Year/Dept**: Weekly schedule for specific student group
+   - **By Room**: Select a room to see its weekly schedule
+   - **All Rooms**: Overview with utilization statistics
+   - **Final Schedule**: Grouped by room
 
 ## Key Features
 
@@ -61,44 +65,50 @@ npm start
 - **Rooms**: Create, Read, Update, Delete
 - **Schedules**: Create, Read, Update, Delete
 
-### Intelligent Scheduling
-- **Weekly Hours System**:
-  - Specify total hours per week (e.g., 5 hours)
-  - System automatically distributes across Monday-Friday
-  - Time slots: 08:00-12:30 (morning), 14:00-17:30 (afternoon)
+### Distributed Scheduling Algorithm (NEW)
 
-- **Priority System**:
-  - Higher student years get priority
-  - Major courses prioritized over minor
-  - Lab courses get additional priority (+3)
+The system **automatically distributes class hours evenly across 5 days**:
 
-- **Two-Phase Room Assignment**:
-  - Phase 1: Lab courses -> Labs, Classroom courses -> Classrooms
-  - Phase 2: If classrooms full, classroom courses can use available labs
-  - Labs are NEVER used by classroom courses until all classrooms are full
+```
+Example: 6-hour course
+- Monday:    90 min
+- Tuesday:   90 min
+- Wednesday: 90 min
+- Thursday:  90 min
+Total: 6 hours spread across 4 days (not bunched on 1-2 days)
 
-- **Conflict Prevention**:
-  - No double-booking of rooms
-  - No student conflicts (same dept/year can't have overlapping classes)
-  - Room type enforcement (lab courses must use labs)
+Key Rules:
+- Minimum session: 90 minutes (1 hour 30 min)
+- Even distribution across Mon-Fri
+- Prevents schedule bunching
+```
+
+### Priority System
+- Higher student years get priority
+- Major courses prioritized over minor
+- Lab courses get additional priority (+3)
+
+### Two-Phase Room Assignment
+- **Phase 1**: Lab courses -> Labs, Classroom courses -> Classrooms
+- **Phase 2**: If classrooms full, classroom courses can use available labs
+- Labs are NEVER used by classroom courses until all classrooms are full
+
+### Conflict Prevention
+- No double-booking of rooms
+- No student conflicts (same dept/year can't have overlapping classes)
+- Room type enforcement (lab courses must use labs)
 
 ### Multiple Viewing Options
+- **By Year & Department**: Weekly schedule filtered by student group
+- **By Room**: Select room from dropdown, view weekly schedule with utilization
+- **All Rooms**: Overview showing hours/day per room with links
 - Weekly timetable (Monday-Friday view)
-- Complete schedule list
 - Final schedule grouped by room
-- Filter by specific room
-- Filter by department
 
 ### Data Persistence
 - Binary file storage
 - Automatic saving
 - Data survives between sessions
-
-### User-Friendly Interface
-- Menu-driven navigation
-- Clear prompts and feedback
-- Formatted table displays
-- Visual status indicators
 
 ## System Architecture
 
@@ -107,41 +117,65 @@ npm start
 |         Main Menu                          |
 +--------------------------------------------+
 |  1. Room Management                        |
-|     - Display/Add/Edit/Delete Rooms        |
 |  2. Schedule Management                    |
-|     - Display/Add/Edit/Delete Schedules    |
-|     - Generate Weekly Schedule             |
-|     - View Weekly Timetable                |
-|     - View Final Schedule                  |
-|     - View by Room / Department            |
+|     - Generate Distributed Schedule        |
+|     - View by Year/Dept                    |
+|     - View by Room                         |
+|     - View All Rooms                       |
 +--------------------------------------------+
               |
               v
 +--------------------------------------------+
-|      Two-Phase Scheduling Algorithm        |
+|   Distributed Scheduling Algorithm         |
 +--------------------------------------------+
-|  Phase 1: Preferred Room Types             |
-|    - Lab courses -> Lab rooms only         |
-|    - Classroom courses -> Classrooms only  |
-|                                            |
-|  Phase 2: Lab Fallback                     |
-|    - Unassigned classroom courses can use  |
-|      available lab rooms                   |
+|  1. Sort by priority                       |
+|  2. For each course:                       |
+|     - Find day with least assigned time    |
+|     - Assign 90-min session                |
+|     - Repeat until weekly hours met        |
+|  3. Phase 2: Lab fallback for classrooms   |
 +--------------------------------------------+
               |
               v
 +--------------------------------------------+
 |      Data Persistence Layer                |
 +--------------------------------------------+
-|  - rooms.dat (room records)                |
-|  - schedules.dat (schedule records)        |
-|  - generated_slots.dat (weekly timetable)  |
+|  - rooms.dat                               |
+|  - schedules.dat                           |
+|  - generated_slots.dat                     |
 +--------------------------------------------+
 ```
 
-## Priority Calculation
+## Time Configuration
 
-The system uses a weighted priority formula:
+| Setting | Value |
+|---------|-------|
+| Days | Monday - Friday (5 days) |
+| Morning Session | 08:00 - 12:30 |
+| Afternoon Session | 14:00 - 17:30 |
+| **Minimum Session Duration** | **90 minutes (1.5 hrs)** |
+| Morning Slots | 08:00, 09:30, 11:00 |
+| Afternoon Slots | 14:00, 15:30, 17:00 |
+
+## Distribution Examples
+
+### 6-Hour Course
+```
+Target: 72 min/day (360 min / 5 days)
+Actual with 90-min sessions:
+  Mon: 90 min | Tue: 90 min | Wed: 90 min | Thu: 90 min
+  Total: 360 min = 6 hours
+```
+
+### 3-Hour Course
+```
+Target: 36 min/day
+Actual with 90-min sessions:
+  Mon: 90 min | Wed: 90 min
+  Total: 180 min = 3 hours
+```
+
+## Priority Calculation
 
 ```
 Priority = (Student Year x 10) + Program Bonus + Room Type Bonus
@@ -154,70 +188,35 @@ Where:
 
 ### Priority Examples
 
-| Course Example | Year | Program | Room | Priority | Reason |
-|----------------|------|---------|------|----------|--------|
-| Advanced Lab Project | 5 | Major | Lab | 58 | Highest: Senior major lab |
-| Senior Seminar | 5 | Major | Classroom | 55 | High: Senior major theory |
-| Junior Lab | 3 | Major | Lab | 38 | Medium: Mid-level major lab |
-| Intro Course | 1 | Minor | Classroom | 10 | Lowest: Freshman minor theory |
+| Course | Year | Program | Room | Priority |
+|--------|------|---------|------|----------|
+| Senior Lab Project | 5 | Major | Lab | 58 |
+| Senior Seminar | 5 | Major | Classroom | 55 |
+| Junior Lab | 3 | Major | Lab | 38 |
+| Intro Course | 1 | Minor | Classroom | 10 |
 
-## Room Assignment Rules
+## Web Interface Navigation
 
-### Lab Courses
-- MUST always use lab rooms
-- Cannot be assigned to classrooms (need specialized equipment)
-- Get +3 priority bonus to ensure they're processed first
-
-### Classroom Courses
-- PREFER classroom rooms (Phase 1)
-- CAN use lab rooms as fallback if classrooms are full (Phase 2)
-- This maximizes room utilization
-
-### Example Scenario
 ```
-Available Rooms:
-- 2 Classrooms
-- 2 Labs
-
-Courses to Schedule:
-- 3 Lab courses (must use labs)
-- 5 Classroom courses (prefer classrooms)
-
-Result:
-- 3 Lab courses -> 2 Labs (assigned)
-- 5 Classroom courses:
-  - 2 -> Classrooms (preferred)
-  - 2 -> Labs (fallback, since classrooms full)
-  - 1 -> May be unassigned if all rooms full at that time
+Home | Rooms | Add Room | Schedules | Add Schedule | Generate | 
+Weekly Timetable | By Year/Dept | By Room | All Rooms | Final Schedule
 ```
 
-## Conflict Resolution
+### View Options
 
-### Room Conflicts
-```
-Schedule A: Monday 08:00-09:00 -> Room 1 (Assigned)
-Schedule B: Monday 08:30-09:30 -> Room 1 (Conflict!) -> Room 2 (Assigned)
-```
-
-### Student Conflicts
-```
-CS Year 3 - Database: Monday 08:00-09:00 (Assigned)
-CS Year 3 - Networks: Monday 08:00-09:00 (Conflict - same students!)
-  -> Assigned to different time slot
-```
-
-### Room Type Priority
-```
-Lab Course + No Lab Available -> Remains unassigned (won't use classroom)
-Classroom Course + No Classroom -> Can use Lab (Phase 2 fallback)
-```
+| View | Description |
+|------|-------------|
+| By Year/Dept | Select year and department, see weekly schedule |
+| By Room | Dropdown to select room, see utilization summary |
+| All Rooms | Table with hours/day per room, links to details |
+| Final Schedule | Grouped by room with all assignments |
 
 ## File Structure
 
 ```
 project/
 |-- scheduling_system.h    # Header file
-|-- scheduling_system.c    # Main application (1100+ lines)
+|-- scheduling_system.c    # Console application
 |-- web_interface.c        # Web CGI interface
 |-- Makefile               # Build configuration
 |-- package.json           # NPM scripts
@@ -237,128 +236,42 @@ project/
 - **Standard**: C99
 - **Compiler**: GCC (or compatible)
 
-### Data Structures
-```c
-typedef struct {
-    int id;
-    char name[100];
-    RoomType type;           // CLASSROOM or LAB
-    int is_active;
-} Room;
-
-typedef struct {
-    int id;
-    char course_name[100];
-    char department[50];
-    int student_year;        // 1-5
-    ProgramType program_type; // MAJOR or MINOR
-    RoomType required_room_type;
-    int weekly_hours;        // Hours per week (e.g., 3, 5)
-    int assigned_room_id;
-    int is_active;
-    int priority;
-} Schedule;
-
-typedef struct {
-    int schedule_id;         // Reference to schedule
-    int room_id;             // Assigned room
-    DayOfWeek day;           // MONDAY-FRIDAY
-    int start_time;          // Minutes from midnight
-    int end_time;
-    int is_active;
-} GeneratedSlot;
-```
-
 ### Capacity
 - **Maximum Rooms**: 100
 - **Maximum Schedules**: 500
 - **Maximum Generated Slots**: 2000
-- **Easily Configurable**: Change MAX_* constants
 
-### Time Configuration
-- **Days**: Monday - Friday (5 days)
-- **Morning**: 08:00 - 12:30
-- **Afternoon**: 14:00 - 17:30
-- **Slot Duration**: 1 hour
-
-## Use Cases
-
-### Scenario 1: Computer Science Department
+### New Functions for Distribution
+```c
+web_count_minutes_on_day()      // Track minutes assigned per day
+web_calc_ideal_minutes_per_day() // Calculate target distribution  
+web_calc_max_minutes_per_day()  // Prevent over-assignment per day
 ```
-Rooms:
-- 2 Computer Labs (Lab)
-- 3 Lecture Halls (Classroom)
-
-Schedules:
-- 10 theory courses (3-5 hrs/week each)
-- 5 lab courses (2-3 hrs/week each)
-
-Result: 
-- Lab courses assigned to labs first
-- Theory courses fill classrooms
-- Overflow theory courses use empty lab slots
-```
-
-### Scenario 2: Multi-Department
-```
-Departments:
-- Computer Science (10 courses)
-- Information Systems (8 courses)
-- Software Engineering (6 courses)
-
-Process:
-1. Add all rooms
-2. Add schedules with weekly hours
-3. Generate weekly schedule
-4. View by department to verify each
-```
-
-## Development Notes
-
-### Code Organization
-- **Lines of Code**: ~1100 (scheduling_system.c)
-- **Functions**: 35+
-- **Modular Design**: Separate functions for each operation
-- **Clear Separation**: UI, logic, and data layers
-
-### Design Principles Applied
-1. **Two-Phase Assignment**: Ensures lab priority while maximizing utilization
-2. **Student Conflict Prevention**: Same dept/year cannot overlap
-3. **Single Responsibility**: Each function does one thing well
-4. **User-Centric**: Clear prompts, helpful feedback
-5. **Robust**: Error handling, input validation
 
 ## Troubleshooting
 
 ### Common Issues
 
-**Issue**: Compilation error with strcasecmp
-```bash
-Solution: Ensure #include <strings.h> is present
-```
-
 **Issue**: Lab course not assigned
-```bash
+```
 Solution: Add more lab rooms - lab courses cannot use classrooms
 ```
 
-**Issue**: Classroom course not assigned
-```bash
-Solution: 
-1. Add more classrooms, OR
-2. Wait for Phase 2 to assign to available labs
+**Issue**: Hours bunched on one day
+```
+Solution: This should not happen with the new distributed algorithm.
+The system finds the day with minimum assigned time before each assignment.
 ```
 
-**Issue**: Student conflict warning
-```bash
-Solution: Same department/year courses have overlapping times
-- Reduce weekly hours, or
-- Add more rooms
+**Issue**: "Student conflict" warnings
+```
+Solution: Too many courses for same dept/year at overlapping times
+- Reduce weekly hours or add more rooms
 ```
 
 ## Credits
 
-Developed as a comprehensive scheduling solution for Bahir Dar University to manage classroom and laboratory allocations efficiently and fairly using priority-based scheduling with lab room priority.
+Developed as a comprehensive scheduling solution for Bahir Dar University to manage classroom and laboratory allocations efficiently using priority-based scheduling with automatic distribution across the week.
 
 ## License
 
@@ -366,6 +279,7 @@ Educational project for Bahir Dar University.
 
 ---
 
-**Version**: 2.0.0
-**Last Updated**: January 2026
-**Status**: Production Ready
+**Version**: 3.0.0  
+**Last Updated**: January 2026  
+**Status**: Production Ready  
+**New in v3.0**: Distributed scheduling across 5 days, 90-min minimum sessions, By Room view with selection

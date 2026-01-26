@@ -34,7 +34,8 @@ typedef enum {
     TUESDAY,
     WEDNESDAY,
     THURSDAY,
-    FRIDAY
+    FRIDAY,
+    DAY_INVALID
 } DayOfWeek;
 
 typedef struct {
@@ -55,6 +56,7 @@ typedef struct {
     int weekly_hours;           // Total hours per week (e.g., 5 = 5 hours/week)
     int assigned_room_id;       // -1 if not assigned
     int is_active;
+    int fifo_order;
     int priority;
 } Schedule;
 
@@ -77,6 +79,7 @@ extern int schedule_count;
 extern int generated_slot_count;
 extern int next_room_id;
 extern int next_schedule_id;
+extern int next_fifo_order;
 
 /* ---------- FUNCTION DECLARATIONS ---------- */
 // Core functions
@@ -97,25 +100,25 @@ void pause_screen();
 void clear_screen();
 
 // Room management
-void display_rooms();
-void add_room();
-void edit_room();
-void delete_room();
+// void display_rooms();
+// void add_room();
+// void edit_room();
+// void delete_room();
 
 // Schedule management
-void display_schedules();
+// void display_schedules();
 void add_schedule();
-void edit_schedule();
-void delete_schedule();
-void generate_weekly_schedule();
-void display_final_schedule();
-void display_weekly_timetable();
-void view_schedule_by_room();
-void view_schedule_by_department();
+// void edit_schedule();
+// void delete_schedule();
+// void generate_weekly_schedule();
+// void display_final_schedule();
+// void display_weekly_timetable();
+// void view_schedule_by_room();
+// void view_schedule_by_department();
 
 // Menu functions
-void room_management_menu();
-void schedule_management_menu();
+// void room_management_menu();
+// void schedule_management_menu();
 
 
 #endif
